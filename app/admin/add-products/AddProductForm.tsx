@@ -10,11 +10,8 @@ import { categories } from "@/utils/Categories";
 import { useCallback, useEffect, useState } from "react";
 import { FieldValues, SubmitHandler, useForm } from "react-hook-form";
 import { colors } from "@/utils/Color";
-import { Image } from "@prisma/client";
 import Button from "@/app/components/Button";
 import toast from "react-hot-toast";
-import firebaseApp from "@/libs/firebase";
-import {getDownloadURL, getStorage, ref, uploadBytesResumable} from 'firebase/storage'
 import axios from "axios";
 import { useRouter } from "next/navigation";
 
@@ -76,59 +73,46 @@ const AddProductForm = () => {
                 return toast.error('No selected image!')
             }
 
-            const handleImageUploads = async () =>{
-                toast('Creating product, please wait...')
-                try {
-                    for(const item of data.images){
-                        if(item.image){
-                            const fileName = new Date().getTime() + '-' + item.image.name
-                            const storage = getStorage(firebaseApp)
-                            const storageRef = ref(storage, `products/${fileName}`)
-                            const uploadTask = uploadBytesResumable(storageRef, item.image)
+const handleImageUploads = async () => {
+    toast('Uploading images, please wait...');
+    try {
+        for (const item of data.images) {
+            if (item.image) {
+                const formData = new FormData();
+                formData.append('file', item.image);
+                formData.append('upload_preset', 'e-shop');
 
-                            await new Promise<void>((resolve, reject) => {
-                                uploadTask.on(
-                                    'state_changed',
-                                    (snapshot) => {
-                                        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100
-                                        console.log('Upload is' + progress + '% done')
-                                        switch (snapshot.state) {
-                                            case 'paused':
-                                                console.log('Upload is paused')
-                                                break;
-                                            case 'running':
-                                                console.log('Upload is running')
-                                                break;
-                                        }
-                                    },
-                                    (error) => {
-                                        console.log('Error uploading image', error)
-                                        reject(error)
-                                    },
-                                    () => {
-                                        getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-                                            uploadedImages.push({
-                                                ...item,
-                                                image: downloadURL
-                                            })
-                                            console.log('File awailable at', downloadURL)
-                                            resolve()
-                                        })
-                                        .catch((error) => {
-                                            console.log('Error getting the download URL', error)
-                                            reject(error)
-                                        })
-                                    }
-                                )
-                            })
-                        }
+                const response = await axios.post(
+                    `https://api.cloudinary.com/v1_1/dds1tikiz/image/upload`,
+                    formData,
+                    {
+                        headers: {
+                            'Content-Type': 'multipart/form-data',
+                        },
+                        timeout: 10000,
                     }
-                } catch (error) {
-                    setIsLoading(false)
-                    console.log('Error handling image uploads', error)
-                    return toast.error('Error handling image uploads')
+                );
+
+                if (response.status === 200) {
+                    uploadedImages.push({
+                        ...item,
+                        image: response.data.secure_url,
+                    });
+                    console.log('Uploaded to Cloudinary:', response.data.secure_url);
+                } else {
+                    throw new Error('Image upload failed');
                 }
             }
+        }
+    } catch (error) {
+        setIsLoading(false);
+        console.error('Error handling image uploads', error);
+        return toast.error('Error uploading images to Cloudinary');
+    }
+};
+
+
+
 
             await handleImageUploads()
             const productData = {...data, images: uploadedImages}
