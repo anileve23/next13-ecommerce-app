@@ -1,5 +1,5 @@
 const ManageOrders = () => {
-    return ( <div>
+    return ( <div className="text-slate-800">
         Manage Oders
     </div> );
 }
