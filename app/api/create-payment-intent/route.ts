@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     const currentUser = await getCurrentUser();
 
     if (!currentUser) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        return NextResponse.error();
     }
 
     const body = await request.json();
@@ -46,7 +46,6 @@ export async function POST(request: Request) {
         if (current_intent) {
             const updated_intent = await stripe.paymentIntents.update(payment_intent_id, { amount: total });
 
-            // Update the order with new total and products
             const [existing_order, update_order] = await Promise.all([
                 prisma.order.findFirst({
                     where: { paymentIntentId: payment_intent_id }
@@ -61,23 +60,18 @@ export async function POST(request: Request) {
             ]);
 
             if (!existing_order) {
-                return NextResponse.json(
-                    { error: "Invalid Payment Intent" },
-                    { status: 400 }
-                );
+                return NextResponse.error();
             }
 
             return NextResponse.json({ paymentIntent: updated_intent });
         }
     } else {
-        // Create the payment intent if no payment intent ID is provided
         const payment_Intent = await stripe.paymentIntents.create({
             amount: total,
             currency: 'eur',
             automatic_payment_methods: { enabled: true },
         });
 
-        // Create the order with the payment intent ID
         orderData.paymentIntentId = payment_Intent.id;
 
         await prisma.order.create({
@@ -86,4 +80,6 @@ export async function POST(request: Request) {
 
         return NextResponse.json({ paymentIntent: payment_Intent });
     }
+
+    return NextResponse.error();
 }
