@@ -13,7 +13,7 @@ import axios from "axios"
 import toast from "react-hot-toast"
 import moment from "moment"
 
-interface ManageOrdersClientProps{
+interface OrdersClientProps{
     orders: ExtendedOrder[]
 }
 
@@ -21,7 +21,7 @@ type ExtendedOrder = Order & {
     user: User
 }
 
-const ManageOrdersClient: React.FC<ManageOrdersClientProps> = ({orders,}) => {
+const OrdersClient: React.FC<OrdersClientProps> = ({orders,}) => {
 
     const router = useRouter();
     let rows: any = []
@@ -97,12 +97,6 @@ const columns: GridColDef[] = [
     width: 200,
     renderCell: (params) => (
       <div className="flex justify-center items-center gap-4 w-full h-full">
-        <ActionBtn icon={MdDeliveryDining} onClick={() => {
-            handleDispatch(params.row.id)
-        }}/>
-        <ActionBtn icon={MdDone} onClick={() => {
-            handleDeliver(params.row.id)
-        }}/>
         <ActionBtn icon={MdRemoveRedEye} onClick={() => {
             router.push(`/order/${params.row.id}`)
         }}/>
@@ -111,35 +105,9 @@ const columns: GridColDef[] = [
   },
 ]
 
-const handleDispatch = useCallback((id: string) => {
-    axios.put('/api/order ', {
-        id,
-        deliveryStatus: 'dispatched',
-    }).then((res) => {
-        toast.success('Order Dispatched')
-        router.refresh()
-    }).catch((err) => {
-        toast.error("Oops! Something went wrong")
-        console.log(err)
-    })
-}, [])
-
-const handleDeliver = useCallback((id: string) => {
-    axios.put('/api/order ', {
-        id,
-        deliveryStatus: 'delivered',
-    }).then((res) => {
-        toast.success('Order delivered')
-        router.refresh()
-    }).catch((err) => {
-        toast.error("Oops! Something went wrong")
-        console.log(err)
-    })
-}, [])
-
     return ( <div className="max-w-[1150px] m-auto text-xl">
         <div className="mb-4 mt-8">
-            <Heading title="Manage Orders" center/>
+            <Heading title="Orders" center/>
         </div>
         <div style={{height: 600, width: "100%"}}>
               <DataGrid
@@ -158,4 +126,4 @@ const handleDeliver = useCallback((id: string) => {
     </div> );
 }
  
-export default ManageOrdersClient;
+export default OrdersClient;
