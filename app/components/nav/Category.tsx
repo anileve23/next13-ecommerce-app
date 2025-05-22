@@ -1,6 +1,5 @@
 'use client'
 
-import { validateConfig } from "next/dist/server/config-shared";
 import { useRouter, useSearchParams } from "next/navigation";
 import queryString from "query-string";
 import { useCallback } from "react";
